@@ -20,7 +20,7 @@ export interface TemporaryPricing {
 }
 
 export const PRICING_SOURCE_URL = "https://commandcode.ai/docs/resources/pricing-limits"
-export const PRICING_LAST_VERIFIED = "2026-10-09"
+export const PRICING_LAST_VERIFIED = "2026-10-14"
 
 export const ZERO_MODEL_COST: CommandCodeModelCost = {
   input: 0,
@@ -194,6 +194,7 @@ export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
   "meta/muse-spark-1.1": { input: 1.25, output: 4.25, cacheRead: 0.15, cacheWrite: 0 },
   "meta/muse-spark-1.2": { input: 1.25, output: 4.25, cacheRead: 0.15, cacheWrite: 0 },
   "meta/muse-spark-1.3": { input: 1.25, output: 4.25, cacheRead: 0.15, cacheWrite: 0 },
+  "meta/muse-wonder-1.0": { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 0 },
   "meta/muse-spark-1.2-contributor": {
     input: 0.1,
     output: 0.2,
@@ -305,6 +306,7 @@ export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
     cacheRead: 0.15,
     cacheWrite: 0.08334,
   },
+  "google/gemini-4-argon": { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 0 },
   "google/gemini-3.8-flash": {
     input: 1.5,
     output: 7.5,

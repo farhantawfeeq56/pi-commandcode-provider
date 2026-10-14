@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Refresh the static capability snapshot to `command-code@1.82.1` by adding `google/gemini-4-argon` (image input, reasoning, `low`/`medium`/`high` efforts) and `meta/muse-wonder-1.0` (image input, reasoning, `low`/`medium`/`high`/`xhigh` efforts).
+- Add reviewed display pricing for both new models, verified against the official pricing page on 2026-10-14: `google/gemini-4-argon` at $2 input / $10 output / $0.10 cache read per million tokens, and `meta/muse-wonder-1.0` at $4 input / $20 output / $0.20 cache read. Neither publishes a cache-write rate. The snapshot now covers all 89 advertised models.
+
 ## 0.7.7 - 2026-10-11
 
 - Recognize the `off` reasoning effort now published for the DeepSeek V4 and V4.1 models, so the catalog parser no longer rejects it and the generate transport never forwards `off` as `reasoning_effort`. The Provider API and Oh My Pi adapters translate the level from the model's thinking metadata on their own wire.
