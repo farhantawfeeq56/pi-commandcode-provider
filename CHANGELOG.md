@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fix the generate transport reporting a per-attempt `timeoutMs` that fires while the response body is stalled as `Request aborted`. The stall is now reported as a timeout error and, when no visible content has been emitted and retries remain, retried like a timeout before the response headers. Previously the host treated the stall as a user cancellation, so neither this extension nor pi retried it.
+- Read ambient credentials through one reader on both transports. The generate fallback consulted `~/.omp/agent/auth.json` before `~/.pi/agent/auth.json` and did not accept the `"command-code": "user_..."` string form, so a user with different keys in both files could stream with a different account than the Provider API path and the quota commands. The documented README order now applies everywhere, and the pi auth file is read from `PI_CODING_AGENT_DIR` when pi runs with that variable so an isolated profile never falls back to another profile's credentials.
 
 ## 0.7.8 - 2026-10-15
 

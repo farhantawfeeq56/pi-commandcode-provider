@@ -51,11 +51,13 @@ export COMMAND_CODE_API_KEY="user_..."
 
 ### Auth file
 
-The provider also reads existing credentials from:
+The provider also reads existing credentials from, in this order:
 
 - `~/.commandcode/auth.json`
-- `~/.pi/agent/auth.json`
+- `~/.pi/agent/auth.json` (or `$PI_CODING_AGENT_DIR/auth.json` when pi runs with that variable)
 - `~/.omp/agent/auth.json`
+
+Both transports and the quota commands use the same lookup.
 
 Supported examples:
 
