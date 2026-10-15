@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Repair catalog synchronization for CLI 1.82.4: read each model's explicit input modalities instead of relying on the removed text-only set and property adjacency. Unexpected metadata still fails closed. Package inspection disables npm lifecycle scripts.
+
 ## 0.7.7 - 2026-10-11
 
 - Recognize the `off` reasoning effort now published for the DeepSeek V4 and V4.1 models, so the catalog parser no longer rejects it and the generate transport never forwards `off` as `reasoning_effort`. The Provider API and Oh My Pi adapters translate the level from the model's thinking metadata on their own wire.
