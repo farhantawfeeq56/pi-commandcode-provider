@@ -17,7 +17,6 @@ import {
 const execFileAsync = promisify(execFile)
 const MODELS_REFERENCE_PATH = "dist/bundled/command-code-knowledge/reference/models.md"
 const CLI_BUNDLE_PATH = "dist/cli.mjs"
-const TEXT_ONLY_MARKER = ',__name(isKnownTextOnlyModel,"isKnownTextOnlyModel")'
 const VALID_EFFORTS = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max"])
 
 function quoteWindowsArgument(argument: string): string {
@@ -136,26 +135,8 @@ export function parseModelsReference(markdown: string): {
   }
 }
 
-export function parseKnownTextOnlyModelIds(bundle: string): readonly string[] {
-  const markerIndex = bundle.indexOf(TEXT_ONLY_MARKER)
-  if (markerIndex < 0) {
-    throw new Error("Could not find Command Code's isKnownTextOnlyModel catalog")
-  }
-
-  const setStart = bundle.lastIndexOf("new Set([", markerIndex)
-  if (setStart < 0) throw new Error("Could not find the text-only model set")
-
-  const arrayStart = setStart + "new Set(".length
-  const arrayEnd = markerIndex - 1
-  const literal = bundle.slice(arrayStart, arrayEnd)
-  const parsed: unknown = JSON.parse(literal)
-  if (!isStringArray(parsed)) throw new Error("Expected the text-only model catalog to be strings")
-
-  return sorted(new Set(parsed))
-}
-
 function modelObject(bundle: string, modelId: string): string {
-  const start = bundle.indexOf(`{id:${JSON.stringify(modelId)},inputModalities:`)
+  const start = bundle.indexOf(`{id:${JSON.stringify(modelId)},`)
   if (start < 0) throw new Error(`Could not find model metadata for ${modelId}`)
 
   let depth = 0
@@ -184,14 +165,30 @@ export function parseBundleModelCapabilities(
   bundle: string,
   modelIds: readonly string[],
 ): {
+  imageModelIds: readonly string[]
   reasoningModelIds: readonly string[]
   maxOutputTokens: Readonly<Record<string, number>>
 } {
+  const imageModelIds: string[] = []
   const reasoningModelIds: string[] = []
   const maxOutputTokens: Record<string, number> = {}
 
   for (const modelId of modelIds) {
     const entry = modelObject(bundle, modelId)
+    const modalitiesLiteral = /\binputModalities:(\[[^\]]*\])/.exec(entry)?.[1]
+    if (!modalitiesLiteral) throw new Error(`Missing input modalities for ${modelId}`)
+    const modalities: unknown = JSON.parse(modalitiesLiteral)
+    if (
+      !isStringArray(modalities) ||
+      !modalities.includes("text") ||
+      modalities.some(
+        (modality) => modality !== "text" && modality !== "image" && modality !== "file",
+      )
+    ) {
+      throw new Error(`Unexpected input modalities for ${modelId}`)
+    }
+    // The host supports text/image inputs; the CLI's file modality is not advertised.
+    if (modalities.includes("image")) imageModelIds.push(modelId)
     if (entry.includes("reasoning:!0") || entry.includes("reasoningEfforts:[")) {
       reasoningModelIds.push(modelId)
     }
@@ -206,6 +203,7 @@ export function parseBundleModelCapabilities(
   }
 
   return {
+    imageModelIds: sorted(imageModelIds),
     reasoningModelIds: sorted(reasoningModelIds),
     maxOutputTokens: Object.fromEntries(
       Object.entries(maxOutputTokens).sort(([left], [right]) => left.localeCompare(right)),
@@ -218,11 +216,10 @@ export function commandCodeModelMetadataFromContents(
   cliBundle: string,
 ): CommandCodeModelMetadata {
   const reference = parseModelsReference(modelsReference)
-  const textOnlyModelIds = new Set(parseKnownTextOnlyModelIds(cliBundle))
   const capabilities = parseBundleModelCapabilities(cliBundle, reference.modelIds)
 
   return {
-    imageModelIds: reference.modelIds.filter((modelId) => !textOnlyModelIds.has(modelId)),
+    imageModelIds: capabilities.imageModelIds,
     reasoningModelIds: capabilities.reasoningModelIds,
     reasoningEfforts: reference.reasoningEfforts,
     maxOutputTokens: capabilities.maxOutputTokens,
