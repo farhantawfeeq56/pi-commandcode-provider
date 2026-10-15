@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- Refresh the static capability snapshot to `command-code@1.82.1` by adding `google/gemini-4-argon` (image input, reasoning, `low`/`medium`/`high` efforts) and `meta/muse-wonder-1.0` (image input, reasoning, `low`/`medium`/`high`/`xhigh` efforts).
-- Add reviewed display pricing for both new models, verified against the official pricing page on 2026-10-14: `google/gemini-4-argon` at $2 input / $10 output / $0.10 cache read per million tokens, and `meta/muse-wonder-1.0` at $4 input / $20 output / $0.20 cache read. Neither publishes a cache-write rate. The snapshot now covers all 89 advertised models.
+- Refresh the static capability snapshot to `command-code@1.82.4`: add image input and reasoning efforts for `google/gemini-4-argon`, `meta/muse-wonder-1.0`, and `Qwen/Qwen3.8-Max-Prime`; replace the retired free Ling 3.1 Flash with `inclusionai/ling-3.1-flash`, preserving its reasoning efforts and 32,768-token output limit. Max Prime has a 131,072-token output limit (#153).
+- Fix catalog synchronization with the CLI's new model-object layout. Read explicit input modalities instead of the removed global text-only set, and project the CLI's additional `file` modality onto the host's supported text/image inputs (#153).
+- Add reviewed display pricing for Gemini 4 Argon, Muse Wonder, Qwen 3.8 Max Prime, paid Ling 3.1 Flash, Nemotron 3.5 Super VL, Muse Spark Open, and the free Cat Jam preview. Remove the retired free Ling entry. Prices and context tiers were verified against the official pricing page on 2026-10-15; the snapshot covers all 93 advertised models. Cat Jam is free only while its stealth preview lasts, with no published expiry. Models not yet present in CLI 1.82.4 keep conservative capability defaults until upstream metadata is available (#153).
 
 ## 0.7.7 - 2026-10-11
 
