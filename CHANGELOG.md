@@ -10,6 +10,7 @@
 - `/commandcode-refresh` now also forgets the probed transport, so an account upgraded from Go is re-checked against the Provider API on the next request instead of staying on the generate fallback until the key changes or the host restarts.
 - Keep context-tier pricing when applying DeepSeek V4 peak rates on the Provider API path. The peak table dropped `tiers`, which would have silently disabled long-context pricing for any time-priced model that gains a tier; no current model is affected.
 - Scope the `/commandcode-status` stream warning to the most recent Responses request. A single malformed reasoning event no longer keeps the warning visible until the host restarts.
+- Apply the shared credential redactor to `/commandcode-status` diagnostics, which kept a narrower pattern set of their own; the URL query stripping is unchanged. Defensive hardening, no confirmed leak.
 
 ## 0.7.8 - 2026-10-15
 
