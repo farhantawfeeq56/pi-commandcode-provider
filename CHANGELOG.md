@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix the generate transport reporting a per-attempt `timeoutMs` that fires while the response body is stalled as `Request aborted`. The stall is now reported as a timeout error and, when no visible content has been emitted and retries remain, retried like a timeout before the response headers. Previously the host treated the stall as a user cancellation, so neither this extension nor pi retried it.
+
 ## 0.7.8 - 2026-10-15
 
 - Redact sensitive text in direct stream errors and normalized context-overflow messages before returning them to the host. This closes two error-reporting paths that did not use the shared redactor; it is defensive hardening, not a claim of a confirmed credential leak ([#155](https://github.com/patlux/pi-commandcode-provider/pull/155)).
