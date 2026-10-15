@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Advance the capability snapshot to `command-code@1.82.4`, adding Qwen3.8-Max-Prime vision/reasoning/output limits and replacing free Ling 3.1 with the paid model. Review October 15 prices for Qwen Prime, paid Ling, Muse Spark Open, Nemotron 3.5 Super VL and free Cat Jam; the pricing snapshot now covers 93 live API models. Models absent from the CLI snapshot retain conservative capabilities rather than guessed vision/reasoning support.
+
 - Refresh the static capability snapshot to `command-code@1.82.1` by adding `google/gemini-4-argon` (image input, reasoning, `low`/`medium`/`high` efforts) and `meta/muse-wonder-1.0` (image input, reasoning, `low`/`medium`/`high`/`xhigh` efforts).
 - Add reviewed display pricing for both new models, verified against the official pricing page on 2026-10-14: `google/gemini-4-argon` at $2 input / $10 output / $0.10 cache read per million tokens, and `meta/muse-wonder-1.0` at $4 input / $20 output / $0.20 cache read. Neither publishes a cache-write rate. The snapshot now covers all 89 advertised models.
 - Repair catalog synchronization for CLI 1.82.4: read each model's explicit input modalities instead of relying on the removed text-only set and property adjacency. Unexpected metadata still fails closed. Package inspection disables npm lifecycle scripts.
