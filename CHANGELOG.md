@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Breaking changes
+
+- Require documented Provider API access. `403 upgrade_required` now returns a clear entitlement/migration error instead of automatically calling the internal `/alpha/generate` endpoint. Go-plan users must use the official CLI within its supported plan or an account with Provider API entitlement; signing in alone does not grant API access. Existing credentials and sessions are preserved. See the README migration section. The Go live-test profile is removed; mock Pi/OMP tests assert that no generation fallback request occurs.
+
+### Other changes
+
 - Refresh the static capability snapshot to `command-code@1.82.4`: add image input and reasoning efforts for `google/gemini-4-argon`, `meta/muse-wonder-1.0`, and `Qwen/Qwen3.8-Max-Prime`; replace the retired free Ling 3.1 Flash with `inclusionai/ling-3.1-flash`, preserving its reasoning efforts and 32,768-token output limit. Max Prime has a 131,072-token output limit (#153).
 - Fix catalog synchronization with the CLI's new model-object layout. Read explicit input modalities instead of the removed global text-only set, and project the CLI's additional `file` modality onto the host's supported text/image inputs (#153).
 - Add reviewed display pricing for Gemini 4 Argon, Muse Wonder, Qwen 3.8 Max Prime, paid Ling 3.1 Flash, Nemotron 3.5 Super VL, Muse Spark Open, and the free Cat Jam preview. Remove the retired free Ling entry. Prices and context tiers were verified against the official pricing page on 2026-10-15; the snapshot covers all 93 advertised models. Cat Jam is free only while its stealth preview lasts, with no published expiry. Models not yet present in CLI 1.82.4 keep conservative capability defaults until upstream metadata is available (#153).
