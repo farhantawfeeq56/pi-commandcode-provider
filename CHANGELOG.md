@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Preserve Chat Completions reasoning history on OMP with an explicit replay compatibility flag, verified by real Pi/OMP follow-up requests rather than only visible thinking deltas.
+- Add shared mock protocol contracts for reasoning, system prompts, parallel tools and image results across Chat Completions, Responses and Anthropic Messages, including packed-package checks. Pin supported hosts in PR CI and check latest hosts weekly. Allow explicit multi-model live profiles without enabling paid CI calls.
+
 ## 0.7.7 - 2026-10-11
 
 - Recognize the `off` reasoning effort now published for the DeepSeek V4 and V4.1 models, so the catalog parser no longer rejects it and the generate transport never forwards `off` as `reasoning_effort`. The Provider API and Oh My Pi adapters translate the level from the model's thinking metadata on their own wire.
