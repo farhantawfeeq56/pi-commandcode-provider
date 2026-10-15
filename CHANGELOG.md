@@ -7,6 +7,7 @@
 - Validate pasted `/login` API keys against the configured `COMMANDCODE_API_BASE` instead of always calling production, and bound the validation request by a 15-second deadline that also covers fetch implementations ignoring cancellation, so a stalled `whoami` no longer hangs `/login`.
 - Require the login state token before the local OAuth callback honors an error payload. Previously any local client, or any page on the formerly trusted `http://localhost:3000` origin, could cancel a pending browser login with an arbitrary error message. Error payloads without the matching state are rejected with `403` and the server keeps waiting for the legitimate callback; `http://localhost:3000` is no longer an allowed browser origin.
 - Send `x-taste-learning: false` on the generate transport unless `COMMANDCODE_TASTE_LEARNING=1` is set, and always `false` under `CMD_ZDR=1`. The header mirrors the official CLI's `tasteLearning` setting and was sent as `true` unconditionally, opting every Go account into server-side taste learning although this extension never reads the learned profile back. The README now documents the working directory, project slug, and session id the generate request carries.
+- `/commandcode-refresh` now also forgets the probed transport, so an account upgraded from Go is re-checked against the Provider API on the next request instead of staying on the generate fallback until the key changes or the host restarts.
 
 ## 0.7.8 - 2026-10-15
 
