@@ -6,7 +6,6 @@ import {
   diffModelMetadata,
   hasModelMetadataDiff,
   parseBundleModelCapabilities,
-  parseKnownTextOnlyModelIds,
   parseModelsReference,
   parsePackageVersion,
   pruneObsoleteEffortOverrides,
@@ -48,8 +47,38 @@ describe("Command Code model metadata checker", () => {
     })
   })
 
-  it("extracts the text-only set from the bundled CLI catalog", () => {
-    assert.deepEqual(parseKnownTextOnlyModelIds(CLI_BUNDLE), ["text-model"])
+  it("reads explicit input modalities without relying on a global text-only set", () => {
+    // command-code@1.82.4 adds behaviorProfile before inputModalities and
+    // resolves text-only status from the model, not a neighboring Set literal.
+    const bundle =
+      'const V={id:"vision-model",behaviorProfile:"standard-v1",inputModalities:["text","image"],reasoning:!0,reasoningEfforts:["low","high"],maxOutputTokens:32768},T={id:"text-model",behaviorProfile:"standard-v1",inputModalities:["text"]},providers=new Set(["anthropic","openai"]),profile="anthropic-interleaved-v1",__name(isKnownTextOnlyModel,"isKnownTextOnlyModel")'
+
+    assert.deepEqual(commandCodeModelMetadataFromContents(MODELS_REFERENCE, bundle), {
+      imageModelIds: ["vision-model"],
+      reasoningModelIds: ["vision-model"],
+      reasoningEfforts: { "vision-model": ["low", "high"] },
+      maxOutputTokens: { "vision-model": 32_768 },
+    })
+  })
+
+  it("projects the CLI file modality onto supported text/image inputs", () => {
+    const bundle = CLI_BUNDLE.replace(
+      'inputModalities:["text","image"]',
+      'inputModalities:["text","image","file"]',
+    ).replace('inputModalities:["text"]', 'inputModalities:["text","file"]')
+    assert.deepEqual(commandCodeModelMetadataFromContents(MODELS_REFERENCE, bundle).imageModelIds, [
+      "vision-model",
+    ])
+  })
+
+  it("rejects missing or unsupported input modalities instead of inferring image support", () => {
+    for (const replacement of ["", "inputModalities:[],", 'inputModalities:["audio"],']) {
+      const bundle = CLI_BUNDLE.replace('inputModalities:["text","image"],', replacement)
+      assert.throws(
+        () => commandCodeModelMetadataFromContents(MODELS_REFERENCE, bundle),
+        /input modalities for vision-model/,
+      )
+    }
   })
 
   it("accepts one exact npm registry version and rejects stale-looking output shapes", () => {
@@ -61,6 +90,7 @@ describe("Command Code model metadata checker", () => {
 
   it("derives image, reasoning, effort, and output-limit metadata", () => {
     assert.deepEqual(parseBundleModelCapabilities(CLI_BUNDLE, ["text-model", "vision-model"]), {
+      imageModelIds: ["vision-model"],
       reasoningModelIds: ["vision-model"],
       maxOutputTokens: { "vision-model": 32_768 },
     })
@@ -181,7 +211,10 @@ export const MODEL_MAX_OUTPUT_TOKENS: Readonly<Record<string, number>> = {
       () => parseModelsReference(MODELS_REFERENCE.replace("low, high", "low, turbo")),
       /Unexpected reasoning efforts/,
     )
-    assert.throws(() => parseKnownTextOnlyModelIds("const unrelated = true"), /Could not find/)
+    assert.throws(
+      () => parseBundleModelCapabilities("const unrelated = true", ["missing-model"]),
+      /Could not find model metadata/,
+    )
   })
 
   it("prunes only the overrides that upstream now publishes", () => {

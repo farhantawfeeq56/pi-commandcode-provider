@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Refresh the static capability snapshot to `command-code@1.82.4`: add image input and reasoning efforts for `google/gemini-4-argon`, `meta/muse-wonder-1.0`, and `Qwen/Qwen3.8-Max-Prime`; replace the retired free Ling 3.1 Flash with `inclusionai/ling-3.1-flash`, preserving its reasoning efforts and 32,768-token output limit. Max Prime has a 131,072-token output limit (#153).
+- Fix catalog synchronization with the CLI's new model-object layout. Read explicit input modalities instead of the removed global text-only set, and project the CLI's additional `file` modality onto the host's supported text/image inputs (#153).
+- Add reviewed display pricing for Gemini 4 Argon, Muse Wonder, Qwen 3.8 Max Prime, paid Ling 3.1 Flash, Nemotron 3.5 Super VL, Muse Spark Open, and the free Cat Jam preview. Remove the retired free Ling entry. Prices and context tiers were verified against the official pricing page on 2026-10-15; the snapshot covers all 93 advertised models. Cat Jam is free only while its stealth preview lasts, with no published expiry. Models not yet present in CLI 1.82.4 keep conservative capability defaults until upstream metadata is available (#153).
+
 ## 0.7.7 - 2026-10-11
 
 - Recognize the `off` reasoning effort now published for the DeepSeek V4 and V4.1 models, so the catalog parser no longer rejects it and the generate transport never forwards `off` as `reasoning_effort`. The Provider API and Oh My Pi adapters translate the level from the model's thinking metadata on their own wire.
