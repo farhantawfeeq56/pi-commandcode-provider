@@ -509,7 +509,8 @@ async function resolvePackageSpec(
       encoding: "utf-8",
     },
   )
-  return `command-code@${parsePackageVersion(JSON.parse(stdout) as unknown)}`
+  const version: unknown = JSON.parse(stdout)
+  return `command-code@${parsePackageVersion(version)}`
 }
 
 async function inspectPackedPackage(packageSpec: string): Promise<{
@@ -522,14 +523,23 @@ async function inspectPackedPackage(packageSpec: string): Promise<{
   try {
     const resolvedPackageSpec = await resolvePackageSpec(packageSpec, directory, npmCacheDirectory)
     const { stdout } = await execNpmFileAsync(
-      ["pack", resolvedPackageSpec, "--json", "--prefer-online", "--cache", npmCacheDirectory],
+      [
+        "pack",
+        resolvedPackageSpec,
+        "--ignore-scripts",
+        "--json",
+        "--prefer-online",
+        "--cache",
+        npmCacheDirectory,
+      ],
       {
         cwd: directory,
         encoding: "utf-8",
         maxBuffer: 10 * 1024 * 1024,
       },
     )
-    const packed = parsePackedPackage(JSON.parse(stdout) as unknown)
+    const packResult: unknown = JSON.parse(stdout)
+    const packed = parsePackedPackage(packResult)
     await execFileAsync("tar", ["-xzf", packed.filename], { cwd: directory })
 
     const packageDirectory = join(directory, "package")
