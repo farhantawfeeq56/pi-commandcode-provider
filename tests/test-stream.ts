@@ -1290,3 +1290,97 @@ describe("streamCommandCode — upstream errors and malformed streams", () => {
     )
   })
 })
+
+describe("streamCommandCode — tool_search wire alias", () => {
+  const messages = [
+    { role: "user", content: "find a tool" },
+    {
+      role: "assistant",
+      content: [{ type: "toolCall", id: "c1", name: "tool_search", arguments: { query: "x" } }],
+    },
+    {
+      role: "toolResult",
+      toolCallId: "c1",
+      toolName: "tool_search",
+      content: [{ type: "text", text: "Loaded 1 tool." }],
+    },
+    { role: "user", content: "continue" },
+  ]
+  const tools = [
+    { name: "tool_search", description: "Search tools", parameters: { type: "object" } },
+  ]
+
+  it("sends the alias and maps the model's call back on the Responses wire", async () => {
+    server.mockResponse({
+      type: "success",
+      events: [
+        JSON.stringify({
+          type: "tool-call",
+          toolCallId: "c2",
+          toolName: "search_tools",
+          input: { query: "y" },
+        }),
+        JSON.stringify({ type: "finish", finishReason: "tool-calls" }),
+      ],
+    })
+    const { streamCommandCode } = createTestDeps({
+      apiBase: server.baseUrl(),
+      isResponsesModel: (modelId) => modelId === "gpt-6-luna",
+    })
+
+    const events = await collectEvents(
+      streamCommandCode(makeModel({ id: "gpt-6-luna" }), makeContext({ messages, tools }), {
+        apiKey: "mock-key",
+      }),
+    )
+
+    const body = server.lastRequestBody()
+    assert.equal(objectAt(body, ["params", "tools", "0", "name"]), "search_tools")
+    assert.equal(
+      objectAt(body, ["params", "messages", "1", "content", "0", "toolName"]),
+      "search_tools",
+    )
+    assert.equal(
+      objectAt(body, ["params", "messages", "2", "content", "0", "toolName"]),
+      "search_tools",
+    )
+
+    const done = events.at(-1)
+    if (done?.type !== "done") throw new Error("expected done")
+    const toolCall = done.message.content[0]
+    assert.equal(toolCall?.type, "toolCall")
+    if (toolCall?.type !== "toolCall") throw new Error("expected tool call")
+    assert.equal(toolCall.name, "tool_search")
+    assert.deepEqual(toolCall.arguments, { query: "y" })
+  })
+
+  it("leaves non-Responses models unchanged", async () => {
+    server.mockResponse({
+      type: "success",
+      events: [JSON.stringify({ type: "finish", finishReason: "stop" })],
+    })
+    const { streamCommandCode } = createTestDeps({
+      apiBase: server.baseUrl(),
+      isResponsesModel: () => false,
+    })
+
+    await collectEvents(
+      streamCommandCode(
+        makeModel({ id: "deepseek/deepseek-v4.1-flash" }),
+        makeContext({ messages, tools }),
+        { apiKey: "mock-key" },
+      ),
+    )
+
+    const body = server.lastRequestBody()
+    assert.equal(objectAt(body, ["params", "tools", "0", "name"]), "tool_search")
+    assert.equal(
+      objectAt(body, ["params", "messages", "1", "content", "0", "toolName"]),
+      "tool_search",
+    )
+    assert.equal(
+      objectAt(body, ["params", "messages", "2", "content", "0", "toolName"]),
+      "tool_search",
+    )
+  })
+})

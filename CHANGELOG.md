@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix recurring `400 Missing required parameter: 'input[N].arguments'` failures on the `/alpha/generate` fallback for Responses-backed models such as `gpt-6-luna`. The backend emits the replayed `tool_search` call without its required `arguments`, so the generate wire now sends that tool as `search_tools` and maps the model's call back to `tool_search`; other models, including Chat Completions and Anthropic, are unchanged.
+
 - Refresh the static capability snapshot to `command-code@1.83.0`: add image input, reasoning, and selectable `low`/`medium`/`high` efforts for `meta/muse-spark-open` and `nvidia/nemotron-3.5-super-vl`; publish reasoning for the free `stealth/cat-jam:free` preview with `low`/`medium`/`high`/`xhigh`/`max` efforts and a 131,072-token output limit. Retire `inclusionai/ling-3.0-flash-sante:free` and drop its reasoning flag, output limit, and display-price entry now that the API no longer advertises it. No prices changed; the reviewed snapshot now covers all 92 advertised models.
 
 ## 0.7.8 - 2026-10-15

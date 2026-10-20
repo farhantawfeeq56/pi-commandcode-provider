@@ -550,6 +550,18 @@ describe("toolsToJson()", () => {
   it("returns an empty array for missing tools", () => {
     assert.deepEqual(toolsToJson(), [])
   })
+
+  it("renames tool names when an alias is supplied", () => {
+    const alias = (name: string) => (name === "tool_search" ? "search_tools" : name)
+    const [tool] = toolsToJson(
+      [{ name: "tool_search", description: "Search tools" }],
+      "gpt-6-luna",
+      alias,
+    ) as [{ name: string }]
+    assert.equal(tool.name, "search_tools")
+    const [plain] = toolsToJson([{ name: "tool_search" }]) as [{ name: string }]
+    assert.equal(plain.name, "tool_search")
+  })
 })
 
 describe("toolsToJson() gemini schema dialect", () => {
@@ -720,6 +732,36 @@ describe("messagesToCC()", () => {
     assert.equal(objectAt(result, ["1", "content", "3"]), undefined)
     assert.equal(objectAt(result, ["2", "role"]), "tool")
     assert.equal(objectAt(result, ["2", "content", "0", "output", "value"]), "hello\nworld")
+  })
+
+  it("renames tool calls and results when an alias is supplied", () => {
+    const alias = (name: string) => (name === "tool_search" ? "search_tools" : name)
+    const result = messagesToCC(
+      [
+        {
+          role: "assistant",
+          content: [{ type: "toolCall", id: "c1", name: "tool_search", arguments: { query: "x" } }],
+        },
+        {
+          role: "toolResult",
+          toolCallId: "c1",
+          toolName: "tool_search",
+          content: [{ type: "text", text: "Loaded 1 tool." }],
+        },
+      ],
+      { toolNameAlias: alias },
+    )
+
+    assert.equal(objectAt(result, ["0", "content", "0", "toolName"]), "search_tools")
+    assert.deepEqual(objectAt(result, ["0", "content", "0", "input"]), { query: "x" })
+    assert.equal(objectAt(result, ["1", "content", "0", "toolName"]), "search_tools")
+    const plain = messagesToCC([
+      {
+        role: "assistant",
+        content: [{ type: "toolCall", id: "c1", name: "tool_search", arguments: {} }],
+      },
+    ])
+    assert.equal(objectAt(plain, ["0", "content", "0", "toolName"]), "tool_search")
   })
 
   it("preserves malformed string tool results instead of sending empty output", () => {

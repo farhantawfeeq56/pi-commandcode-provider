@@ -209,4 +209,6 @@ export interface CoreDependencies {
   homeDir?: () => string
   /** Injectable delay for retry backoff. Defaults to setTimeout. */
   delay?: (ms: number, signal: AbortSignal) => Promise<void>
+  /** Whether the model is served by the OpenAI Responses wire (see TOOL_SEARCH_ALIAS). */
+  isResponsesModel?: (modelId: string) => boolean
 }

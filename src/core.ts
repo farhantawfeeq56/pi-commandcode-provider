@@ -52,6 +52,27 @@ const DEFAULT_MAX_RETRIES = 0
 const DEFAULT_MAX_RETRY_DELAY_MS = 60_000
 const BASE_RETRY_DELAY_MS = 500
 
+/**
+ * Command Code's `/alpha/generate` backend rebuilds OpenAI Responses items for
+ * Responses-backed models. It special-cases a tool literally named
+ * `tool_search` and emits that item without its required `arguments`, so every
+ * follow-up turn fails with
+ * `400 Missing required parameter: 'input[N].arguments'`.
+ *
+ * `shortcut:` send the tool under an alias on that wire and map the model's
+ * call back to the host name. Remove once the backend keeps the arguments.
+ */
+const TOOL_SEARCH_NAME = "tool_search"
+const TOOL_SEARCH_WIRE_ALIAS = "search_tools"
+
+function wireToolName(name: string, alias: boolean): string {
+  return alias && name === TOOL_SEARCH_NAME ? TOOL_SEARCH_WIRE_ALIAS : name
+}
+
+function hostToolName(name: string, alias: boolean): string {
+  return alias && name === TOOL_SEARCH_WIRE_ALIAS ? TOOL_SEARCH_NAME : name
+}
+
 function isRetryableStatus(status: number): boolean {
   return status === 429 || (status >= 500 && status < 600)
 }
@@ -235,6 +256,9 @@ export function createStreamCommandCode(deps: CoreDependencies) {
     options?: StreamOptions,
   ): AssistantMessageEventStreamLike {
     const stream = deps.createStream()
+    // Only Responses-backed models hit the generate backend's tool_search bug.
+    const aliasToolSearch = deps.isResponsesModel?.(model.id) === true
+    const toWireToolName = (name: string) => wireToolName(name, aliasToolSearch)
 
     async function run() {
       // Some hosts pass a literal env-var reference instead of resolving it.
@@ -332,6 +356,10 @@ export function createStreamCommandCode(deps: CoreDependencies) {
 
       const handleEvent = (event: unknown) => {
         if (!isRecord(event)) return
+        // Translate the aliased wire tool name back before the host sees it.
+        if (aliasToolSearch && event.toolName === TOOL_SEARCH_WIRE_ALIAS) {
+          event.toolName = hostToolName(TOOL_SEARCH_WIRE_ALIAS, aliasToolSearch)
+        }
 
         switch (event.type) {
           case "text-delta": {
@@ -560,8 +588,11 @@ export function createStreamCommandCode(deps: CoreDependencies) {
           skills: null,
           params: {
             model: model.id,
-            messages: messagesToCC(context.messages, { allowImages }),
-            tools: toolsToJson(context.tools, model.id),
+            messages: messagesToCC(context.messages, {
+              allowImages,
+              toolNameAlias: toWireToolName,
+            }),
+            tools: toolsToJson(context.tools, model.id, toWireToolName),
             system: systemPromptToText(context.systemPrompt),
             max_tokens: generateMaxTokens(model, options),
             stream: true,

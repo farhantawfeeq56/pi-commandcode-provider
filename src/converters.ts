@@ -201,14 +201,18 @@ export function getEnvironmentInfo(): string {
   return `${process.platform}-${process.arch}, Node.js ${process.version}`
 }
 
-export function toolsToJson(tools?: readonly ToolLike[], modelId?: string): unknown[] {
+export function toolsToJson(
+  tools?: readonly ToolLike[],
+  modelId?: string,
+  toolNameAlias?: (name: string) => string,
+): unknown[] {
   if (!tools) return []
   const geminiSafe = modelId !== undefined && modelId.startsWith("google/gemini-")
   return tools.map((tool) => {
     const schema = tool.parameters ? toJsonSchema(tool.parameters) : {}
     return {
       type: "function",
-      name: tool.name,
+      name: toolNameAlias ? toolNameAlias(tool.name) : tool.name,
       description: tool.description,
       input_schema: geminiSafe ? geminiSafeJsonSchema(schema) : schema,
     }
@@ -318,9 +322,12 @@ function toolCallState(messages?: readonly MessageLike[]): ToolCallState {
 
 export function messagesToCC(
   messages?: readonly MessageLike[],
-  options: { allowImages?: boolean } = {},
+  options: { allowImages?: boolean; toolNameAlias?: (name: string) => string } = {},
 ): unknown[] {
   const allowImages = options.allowImages ?? false
+  // Some backend wires special-case certain tool names and reject the replay
+  // (see TOOL_SEARCH_ALIAS in core.ts), so calls/results can be renamed.
+  const aliasToolName = options.toolNameAlias ?? ((name: string) => name)
   if (!allowImages) assertTextOnlyMessages(messages)
 
   const out: unknown[] = []
@@ -354,7 +361,7 @@ export function messagesToCC(
           parts.push({ type: "reasoning", text: stringValue(content.thinking) ?? "" })
         } else if (content.type === "toolCall") {
           const rawToolCallId = stringValue(content.id) ?? ""
-          const toolName = stringValue(content.name) ?? ""
+          const toolName = aliasToolName(stringValue(content.name) ?? "")
           if (!rawToolCallId) continue
           const toolCallId = wireId(rawToolCallId)
           parts.push({
@@ -397,7 +404,7 @@ export function messagesToCC(
             {
               type: "tool-result",
               toolCallId: wireId(toolMsg.toolCallId),
-              toolName: toolMsg.toolName,
+              toolName: aliasToolName(toolMsg.toolName ?? ""),
               output: toolMsg.isError
                 ? { type: "error-text", value: outputText }
                 : { type: "text", value: outputText },

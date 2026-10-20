@@ -204,10 +204,12 @@ export default async function (pi: ExtensionAPI) {
   const modelsTimeoutMs = getModelsTimeoutMs()
   const modelsCachePath =
     process.env.COMMANDCODE_MODELS_CACHE ?? join(getAgentDir(), "commandcode-models.json")
+  const modelApis = new Map<string, CommandCodeApi>()
   const streamGenerate = createStreamCommandCode({
     createStream: () => new AssistantMessageEventStream(),
     calculateCost: calculateCommandCodeCost,
     apiBase: legacyApiBase(apiBase),
+    isResponsesModel: (modelId) => modelApis.get(modelId) === "openai-responses",
   })
   const resolveStreamOptions = (options?: Parameters<typeof streamNativeProvider>[2]) =>
     withResolvedCommandCodeApiKey(options, getConfiguredApiKey())
@@ -218,7 +220,6 @@ export default async function (pi: ExtensionAPI) {
   // The host dispatches every Command Code model through one custom api id, so
   // the wire each model answers on is resolved here from the catalog that
   // `createProviderConfig` registered. Unknown ids fall back to the id rule.
-  const modelApis = new Map<string, CommandCodeApi>()
   const resolveModelApi = (modelId: string): CommandCodeApi =>
     modelApis.get(modelId) ?? apiForModelId(modelId)
   let streamWarning: string | undefined
